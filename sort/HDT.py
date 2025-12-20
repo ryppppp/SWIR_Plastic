@@ -16,14 +16,13 @@ from sklearn.metrics import confusion_matrix, classification_report, accuracy_sc
 # ----------------------------
 # 配置参数
 # ----------------------------
-TRAIN_DIR = "./dataset/Multispectral/train"
-TEST_DIR = "./dataset/Multispectral/test"
-PLOT_DIR = "./sort/results_hdt"
-MODEL_DIR = "./sort/results_hdt"
+TRAIN_DIR = "./dataset/MSI_1"
+TEST_DIR = "./dataset/MSI_2"
+PLOT_DIR = "./sort/results_hdt_new"
+MODEL_DIR = "./sort/results_hdt_new"
 
 BANDS = ['1140','1200','1245','1310']
 LABEL_MAP = {
-    # 0: "ABS",
     1: "PA",
     2: "PET",
     3: "PMMA",
@@ -77,10 +76,8 @@ def compute_spectral_features(v):
     ], dtype=np.float32)
 
 
-# ============================================================
-# 加载 csv（train 集合并做增强）
-# ============================================================
-def load_train(csv_dir):
+# 加载 csv
+def load_csv(csv_dir):
     csv_paths = glob.glob(os.path.join(csv_dir, "*.csv"))
     all_raw, all_feat, all_y = [], [], []
 
@@ -105,56 +102,7 @@ def load_train(csv_dir):
     return np.array(all_raw), np.array(all_feat), np.array(all_y)
 
 
-# ============================================================
-# 测试集
-# ============================================================
-def load_csv_test(csv_dir):
-    csv_paths = glob.glob(os.path.join(csv_dir, "*.csv"))
-    all_raw, all_feat, all_y = [], [], []
-
-    for p in csv_paths:
-        df = pd.read_csv(p)
-        arr = df[BANDS].values.astype(np.float32)
-        labels = df["label"].astype(int).values
-
-        for i in range(len(arr)):
-            all_raw.append(arr[i])
-            all_feat.append(compute_spectral_features(arr[i]))
-            all_y.append(labels[i])
-
-    return np.array(all_raw), np.array(all_feat), np.array(all_y)
-
-
-# ============================================================
-# 绘制混淆矩阵
-# ============================================================
-def plot_confusion(cm, classes, save_path=None):
-    cm = cm.astype('float')
-    row_sum = cm.sum(axis=1, keepdims=True)
-    row_sum[row_sum==0] = 1
-    cm = cm / row_sum
-
-    fig, ax = plt.subplots(figsize=(8,6))
-    im = ax.imshow(cm, cmap="Blues")
-
-    ax.set_xticks(np.arange(len(classes)))
-    ax.set_yticks(np.arange(len(classes)))
-    ax.set_xticklabels(classes, rotation=45)
-    ax.set_yticklabels(classes)
-
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(j, i, f"{cm[i,j]:.2f}", ha="center", va="center")
-
-    fig.tight_layout()
-    if save_path:
-        fig.savefig(save_path, dpi=160)
-    plt.close(fig)
-
-
-# ============================================================
 # 分段式层级分类器训练
-# ============================================================
 def train_hierarchical(X_train, y_train):
     models = {}
 
@@ -245,6 +193,30 @@ def hierarchical_predict(models, scaler, X):
 
     return pred
 
+# 绘制混淆矩阵
+def plot_confusion(cm, classes, save_path=None):
+    cm = cm.astype('float')
+    row_sum = cm.sum(axis=1, keepdims=True)
+    row_sum[row_sum==0] = 1
+    cm = cm / row_sum
+
+    fig, ax = plt.subplots(figsize=(8,6))
+    im = ax.imshow(cm, cmap="Blues")
+
+    ax.set_xticks(np.arange(len(classes)))
+    ax.set_yticks(np.arange(len(classes)))
+    ax.set_xticklabels(classes, rotation=45)
+    ax.set_yticklabels(classes)
+
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, f"{cm[i,j]:.2f}", ha="center", va="center")
+
+    fig.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=160)
+    plt.close(fig)
+
 def feature_names():
     return [
         "b1", "b2", "b3", "b4",
@@ -256,6 +228,7 @@ def feature_names():
         "angle"
     ]
 
+# 可视化特征重要性
 def plot_feature_importance(importances, names, save_path):
     idx = np.argsort(importances)[::-1]
     names_sorted = [names[i] for i in idx]
@@ -270,12 +243,13 @@ def plot_feature_importance(importances, names, save_path):
     plt.savefig(save_path, dpi=160)
     plt.close()
 
+
 # ============================================================
 # 主流程
 # ============================================================
 print("=== Loading ALL data (TRAIN_DIR + TEST_DIR) ===")
-Xtrain_raw_a, Xtrain_feat_a, ytrain_a = load_train(TRAIN_DIR)
-Xtrain_raw_b, Xtrain_feat_b, ytrain_b = load_train(TEST_DIR)
+Xtrain_raw_a, Xtrain_feat_a, ytrain_a = load_csv(TRAIN_DIR)
+Xtrain_raw_b, Xtrain_feat_b, ytrain_b = load_csv(TEST_DIR)
 
 X_all_feat = np.concatenate([Xtrain_feat_a, Xtrain_feat_b], axis=0)
 y_all = np.concatenate([ytrain_a, ytrain_b], axis=0)
@@ -315,7 +289,7 @@ print("Test label distribution:", Counter(y_test.tolist()))
 print("=== Training hierarchical classifier (train only) ===")
 models, scaler = train_hierarchical(X_train_boot, y_train_boot)
 
-# ====== 验证 ======
+# 验证
 print("\n=== Evaluating on validation set ===")
 y_val_pred = hierarchical_predict(models, scaler, X_val)
 print("Val accuracy:", accuracy_score(y_val, y_val_pred))
@@ -329,7 +303,7 @@ cm_val = confusion_matrix(y_val, y_val_pred, labels=sorted(LABEL_MAP.keys()))
 plot_confusion(cm_val, [LABEL_MAP[i] for i in sorted(LABEL_MAP.keys())], os.path.join(PLOT_DIR, "val_confusion.png"))
 print("Saved validation confusion matrix.")
 
-# ====== 测试 ======
+# 测试
 print("\n=== Evaluating on test set ===")
 y_test_pred = hierarchical_predict(models, scaler, X_test)
 print("Test accuracy:", accuracy_score(y_test, y_test_pred))
@@ -344,7 +318,7 @@ plot_confusion(cm_test, [LABEL_MAP[i] for i in sorted(LABEL_MAP.keys())], os.pat
 print("Saved test confusion matrix.")
 
 
-# 可视化特征重要性
+
 fnames = feature_names()
 
 for name in ["pp_pe_final", "pvc_final", "aromatic_final", "nonaromatic_final"]:
