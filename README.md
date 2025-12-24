@@ -23,6 +23,8 @@
       ![hse-tree](diagram/hse-tree.png)
   
     - lightGBM.py/svm.py/spectual_spatial_network.py分别是尝试过的梯度提升决策树、支持向量机、谱空融合网络。实验发现，分类性能均不如融合了先验化学知识的HSE-Tree。
+
+    - result_hdt中展示了HSE-Tree的分类性能，result文件夹下为其他尝试的方法得到的结果。
   
   - diagram：论文中的图片源文件
   
