@@ -1,7 +1,8 @@
 # SWIR_Plastic_Sort
 - **代码目录结构**
-  - **dataset（数据集）：**包含高光谱图像(HSI)和多光谱图像(MSI)数据，分别各来自两批塑料样品
+  - **dataset（数据集）**
   
+    - 包含高光谱图像(HSI)和多光谱图像(MSI)数据，分别各来自两批塑料样品
     - HSI_1和HSI_2分别是两批来自真实工业产线的塑料样品的224维高光谱数据（含224个波段，波长范围900-1700nm）
     - MSI_1和MSI_2分别是由HSI_1和HSI_2通过simulate_multispectral.py代码合成出的多光谱数据。合成的过程中考虑了真实的滤光片响应函数，输出是包含1140/1200/1245/1310nm这四个波段的4维多光谱数据.
     - figures文件下是部分样品的多光谱曲线图
@@ -12,11 +13,13 @@
     - 代码中分别展示了主要尝试的方法：PCA、CARS、Kernel PCA、K-Means聚类与ANOVA F值组合验证、RFE递归验证和K-W检验等数据驱动的特征提取方法
     - 结果：综合 K-Means聚类、RFE递归算法筛选结果及材料化学性质分析，本研究最终选定 4 个关键波段：1140 nm、1200 nm、1245 nm和1310 nm。这些波段既保留了短波红外高光谱中塑料区分度最高的特征信息，又与多光谱滤光片设计兼容，为后续多光谱图像分类和工业化分选系统开发提供了可靠依据。
   
-  - **sort（分类方法）：**利用1140/1200/1245/1310nm四个波段的多光谱数据，实现对PET、PVC、PP、PC、PE、PS、PA、PMMA等8种塑料材质的精细分类
+  - **sort（分类方法）**
   
-    - HDT.py：核心代码。提出一种用于多光谱塑料聚合物分类的**特征增强层次决策树**(Hierarchical Spectral Feature Enhanced Decision Tree,HSE-Tree)，结构如下图所示。
+    - 利用1140/1200/1245/1310nm四个波段的多光谱数据，实现对PET、PVC、PP、PC、PE、PS、PA、PMMA等8种塑料材质的精细分类
   
-      ![hse-tree](\diagram\hse-tree.png)
+    - **HDT.py：核心代码。**提出一种用于多光谱塑料聚合物分类的**特征增强层次决策树**(Hierarchical Spectral Feature Enhanced Decision Tree,**HSE-Tree)**，结构如下图所示。
+  
+      ![hse-tree](diagram/hse-tree.png)
   
     - lightGBM.py/svm.py/spectual_spatial_network.py分别是尝试过的梯度提升决策树、支持向量机、谱空融合网络。实验发现，分类性能均不如融合了先验化学知识的HSE-Tree。
   
