@@ -16,7 +16,7 @@
   
     - HDT.py：核心代码。提出一种用于多光谱塑料聚合物分类的**特征增强层次决策树**(Hierarchical Spectral Feature Enhanced Decision Tree,HSE-Tree)，结构如下图所示。
   
-      ![hse-tree](C:\Users\Lenovo\Desktop\塑料分选\SWIR_Plastic\diagram\hse-tree.png)
+      ![hse-tree](\diagram\hse-tree.png)
   
     - lightGBM.py/svm.py/spectual_spatial_network.py分别是尝试过的梯度提升决策树、支持向量机、谱空融合网络。实验发现，分类性能均不如融合了先验化学知识的HSE-Tree。
   
